@@ -17,8 +17,8 @@ DB_URL = 'http://www.ipdeny.com/ipblocks/data/countries'
 CIDR_PATTERN = re.compile(r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\/(3[0-2]|[12][0-9]|[0-9])$')
 update_completed = False
 
-os.chdir("/home/ob3r0n/Desktop/geoblock/")
-CRON_JOB = '0 5 1,15 * * /usr/bin/python3 /home/ob3r0n/Desktop/geoblock/update.py'
+os.chdir("/opt/hosting/geoblock/")
+CRON_JOB = '0 5 1,15 * * /usr/bin/python3 /opt/hosting/geoblock/updater.py'
 
 def is_valid_cidr(cidr):
     return CIDR_PATTERN.match(cidr) is not None
@@ -187,7 +187,7 @@ HTML_TEMPLATE = '''
     </script>
 </head>
 <body>
-    <h1>Country GEOBLOCK</h1>
+    <h1>Country GEOBLOCK. HOSTING SERVER</h1>
     <details>
         <summary style="font-size: 1.5em; font-weight: bold;">Countries list</summary>
         {% for country in countries %}
@@ -551,7 +551,7 @@ def install_schedule():
         with Popen(['crontab', '-'], stdin=PIPE) as proc:
             proc.communicate(input=crontab.encode('utf-8'))
 
-        reboot_job = f'@reboot /usr/bin/python3 /home/ob3r0n/Desktop/geoblock/update.py\n'
+        reboot_job = f'@reboot sleep 10 && /usr/bin/python3 /opt/hosting/geoblock/updater.py\n'
         with Popen(['crontab', '-'], stdin=PIPE) as proc:
             proc.communicate(input=(crontab + reboot_job).encode('utf-8'))
     return redirect(url_for('index'))
@@ -584,4 +584,4 @@ def update_country_status():
 
 if __name__ == '__main__':
     init_db()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
