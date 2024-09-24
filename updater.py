@@ -14,7 +14,7 @@ DB_URL = "https://download.ip2location.com/lite/IP2LOCATION-LITE-DB1.CSV.ZIP"
 DB_PATH = "/tmp/IP2LOCATION-LITE-DB1.CSV"
 BACKUP_ZONE_DIR = os.path.join(ZONE_DIR, "backup")
 SQLITE_DB_PATH = "app.db" 
-os.chdir("/home/ob3r0n/Desktop/geoblock/")
+os.chdir("/opt/hosting/geoblock/")
 
 def timestamp():
     return subprocess.check_output("date +%Y-%m-%d_%H-%M-%S", shell=True).decode().strip()
@@ -22,8 +22,8 @@ def timestamp():
 def backup_existing_rules():
     if not os.path.exists(BACKUP_ZONE_DIR):
         os.makedirs(BACKUP_ZONE_DIR, exist_ok=True)
-    subprocess.run(['iptables-save'], stdout=open(os.path.join(BACKUP_ZONE_DIR, f"iptables_{timestamp()}.backup"), 'w'), check=True)
-    subprocess.run(['ipset', 'save'], stdout=open(os.path.join(BACKUP_ZONE_DIR, f"ipset_{timestamp()}.backup"), 'w'), check=True)
+    subprocess.run(['sudo', 'iptables-save'], stdout=open(os.path.join(BACKUP_ZONE_DIR, f"iptables_{timestamp()}.backup"), 'w'), check=True)
+    subprocess.run(['sudo', 'ipset', 'save'], stdout=open(os.path.join(BACKUP_ZONE_DIR, f"ipset_{timestamp()}.backup"), 'w'), check=True)
 
 def download_and_extract_db():
     print("Downloading and extracting database ...")
@@ -36,19 +36,19 @@ def download_and_extract_db():
     print("Database downloaded and extracted.")
 
 def setup_ipset():
-    result = subprocess.run(['ipset', 'list', IPSET_NAME], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['sudo', 'ipset', 'list', IPSET_NAME], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode == 0:
         print("Flushing existing ipset set...")
-        subprocess.run(['ipset', 'flush', IPSET_NAME], check=True)
+        subprocess.run(['sudo', 'ipset', 'flush', IPSET_NAME], check=True)
     else:
         print("Creating new ipset set...")
-        subprocess.run(['ipset', 'create', IPSET_NAME, 'hash:net', 'family', 'inet'], check=True)
+        subprocess.run(['sudo', 'ipset', 'create', IPSET_NAME, 'hash:net', 'family', 'inet'], check=True)
 
 def setup_iptables():
-    result = subprocess.run(['iptables', '-C', 'INPUT', '-m', 'set', '--match-set', IPSET_NAME, 'src', '-j', 'DROP'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(['sudo', 'iptables', '-C', 'INPUT', '-m', 'set', '--match-set', IPSET_NAME, 'src', '-j', 'DROP'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode != 0:
         print("Creating new iptables rule...")
-        subprocess.run(['iptables', '-I', 'INPUT', '-m', 'set', '--match-set', IPSET_NAME, 'src', '-j', 'DROP'], check=True)
+        subprocess.run(['sudo', 'iptables', '-I', 'INPUT', '-m', 'set', '--match-set', IPSET_NAME, 'src', '-j', 'DROP'], check=True)
     else:
         print("iptables rule already exists.")
 
@@ -77,7 +77,7 @@ def process_country_group(countries):
                 cidr = convert_ip_range_to_cidr(start_ip, end_ip)
                 if cidr:
                     print(f"Adding {cidr} to ipset for {country_code}")
-                    subprocess.run(['ipset', 'add', IPSET_NAME, cidr], check=True)
+                    subprocess.run(['sudo', 'ipset', 'add', IPSET_NAME, cidr], check=True)
 
 def update():
     backup_existing_rules()
@@ -96,7 +96,7 @@ def update():
 
     for ip in whitelist_ips:
         print(f"Adding whitelisted IP {ip} to iptables with ACCEPT action")
-        subprocess.run(['iptables', '-I', 'INPUT', '-s', ip, '-j', 'ACCEPT'], check=True)
+        subprocess.run(['sudo', 'iptables', '-I', 'INPUT', '-s', ip, '-j', 'ACCEPT'], check=True)
 
     with sqlite3.connect(SQLITE_DB_PATH) as conn:
         cursor = conn.cursor()
