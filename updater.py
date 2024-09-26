@@ -16,6 +16,16 @@ BACKUP_ZONE_DIR = os.path.join(ZONE_DIR, "backup")
 SQLITE_DB_PATH = "app.db" 
 os.chdir("/opt/hosting/geoblock/")
 
+def check_internet_access():
+    while True:
+        try:
+            subprocess.run(['ping', '-c', '1', '8.8.8.8'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("Internet is accessible.")
+            break
+        except subprocess.CalledProcessError:
+            print("No internet access. Retrying in 5 seconds...")
+            time.sleep(5)
+
 def timestamp():
     return subprocess.check_output("date +%Y-%m-%d_%H-%M-%S", shell=True).decode().strip()
 
@@ -80,6 +90,7 @@ def process_country_group(countries):
                     subprocess.run(['sudo', 'ipset', 'add', IPSET_NAME, cidr], check=True)
 
 def update():
+    check_internet_access()
     backup_existing_rules()
     download_and_extract_db()
     setup_ipset()

@@ -551,7 +551,7 @@ def install_schedule():
         with Popen(['crontab', '-'], stdin=PIPE) as proc:
             proc.communicate(input=crontab.encode('utf-8'))
 
-        reboot_job = f'@reboot sleep 10 && /usr/bin/python3 /opt/hosting/geoblock/updater.py\n'
+        reboot_job = f'@reboot /usr/bin/python3 /opt/hosting/geoblock/updater.py\n'
         with Popen(['crontab', '-'], stdin=PIPE) as proc:
             proc.communicate(input=(crontab + reboot_job).encode('utf-8'))
     return redirect(url_for('index'))
